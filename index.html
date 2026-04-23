@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizMaster Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy:   #1E2761;
+    --mid:    #2A3D8F;
+    --gold:   #F5A623;
+    --golddk: #C87F0A;
+    --white:  #FFFFFF;
+    --offwh:  #F4F6FB;
+    --card:   #EEF2FB;
+    --dark:   #1A1A2E;
+    --gray:   #5A6070;
+    --lgray:  #8892A4;
+    --red:    #E53935;
+    --green:  #2E7D32;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--offwh);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--navy);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+  .topbar-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+  .topbar-brand span { color: var(--gold); }
+  .topbar-right { display: flex; align-items: center; gap: 1rem; }
+  .topbar-user {
+    font-size: 0.85rem;
+    color: #CADCFC;
+    display: none;
+  }
+  .btn-logout {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: var(--white);
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    display: none;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.1); }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── AUTH PAGE ── */
+  .auth-wrap {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #1E2761 0%, #2A3D8F 50%, #1E2761 100%);
+  }
+  .auth-box {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .auth-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 0.3rem;
+  }
+  .auth-sub { font-size: 0.9rem; color: var(--gray); margin-bottom: 1.8rem; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 1.8rem; border-bottom: 2px solid var(--card); }
+  .auth-tab {
+    flex: 1;
+    padding: 0.6rem;
+    text-align: center;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--lgray);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .auth-tab.active { color: var(--navy); border-bottom-color: var(--gold); }
+
+  .form-group { margin-bottom: 1.1rem; }
+  .form-group label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--gray); margin-bottom: 0.4rem; }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #dde3f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--dark);
+    background: var(--offwh);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--mid); background: var(--white); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+  }
+  .btn-primary:hover { background: var(--mid); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,39,97,0.25); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .alert {
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .alert.error { background: #FFEBEE; color: var(--red); border: 1px solid #FFCDD2; display: block; }
+  .alert.success { background: #E8F5E9; color: var(--green); border: 1px solid #C8E6C9; display: block; }
+
+  /* ── DASHBOARD ── */
+  .dashboard { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .dash-greeting {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .dash-greeting span { color: var(--gold); }
+  .role-badge {
+    background: var(--navy);
+    color: var(--gold);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(30,39,97,0.08);
+    border-left: 4px solid var(--navy);
+  }
+  .stat-card.gold { border-left-color: var(--gold); }
+  .stat-card.green { border-left-color: #2E7D32; }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--navy); }
+  .stat-label { font-size: 0.82rem; color: var(--gray); margin-top: 0.2rem; }
+
+  /* Section */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .btn-add {
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-add:hover { background: var(--golddk); color: var(--white); transform: translateY(-1px); }
+
+  /* Quiz cards grid */
+  .quiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+  .quiz-card {
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(30,39,97,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1.5px solid transparent;
+  }
+  .quiz-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(30,39,97,0.14); border-color: #dde3f0; }
+  .quiz-card-header { background: var(--navy); padding: 1rem 1.2rem; }
+  .quiz-card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--white); }
+  .quiz-card-body { padding: 1rem 1.2rem; }
+  .quiz-card-desc { font-size: 0.88rem; color: var(--gray); margin-bottom: 1rem; line-height: 1.5; }
+  .quiz-card-meta { display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .meta-tag {
+    background: var(--card);
+    color: var(--mid);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+  .quiz-card-actions { display: flex; gap: 0.5rem; }
+  .btn-sm {
+    flex: 1;
+    padding: 0.45rem 0.5rem;
+    border-radius: 6px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-attempt { background: var(--navy); color: var(--white); }
+  .btn-attempt:hover { background: var(--mid); }
+  .btn-delete { background: #FFEBEE; color: var(--red); }
+  .btn-delete:hover { background: var(--red); color: var(--white); }
+  .btn-leaderboard { background: var(--card); color: var(--navy); }
+  .btn-leaderboard:hover { background: var(--mid); color: var(--white); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(30,39,97,0.06);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-text { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem; }
+  .empty-sub { font-size: 0.88rem; color: var(--gray); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,15,40,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 2rem;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--navy); margin-bottom: 1.5rem; }
+  .modal-footer { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+  .btn-cancel {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--card);
+    color: var(--gray);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { background: #dde3f0; }
+  .btn-submit {
+    flex: 2;
+    padding: 0.75rem;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-submit:hover { background: var(--mid); }
+
+  /* Quiz attempt */
+  .attempt-wrap { max-width: 680px; }
+  .question-block {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 12px rgba(30,39,97,0.07);
+  }
+  .question-num { font-size: 0.78rem; font-weight: 500; color: var(--lgray); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .question-text { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem; color: var(--dark); margin-bottom: 1rem; }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .option-btn {
+    padding: 0.65rem 1rem;
+    border: 1.5px solid #dde3f0;
+    border-radius: 8px;
+    background: var(--offwh);
+    color: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .option-btn:hover { border-color: var(--mid); background: var(--card); }
+  .option-btn.selected { border-color: var(--navy); background: var(--navy); color: var(--white); }
+
+  /* Results / Leaderboard */
+  .result-banner {
+    background: var(--navy);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--white);
+  }
+  .result-score { font-family: 'Syne', sans-serif; font-size: 3.5rem; font-weight: 800; color: var(--gold); }
+  .result-label { font-size: 0.95rem; color: #CADCFC; margin-top: 0.3rem; }
+
+  .leaderboard-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(30,39,97,0.08); }
+  .leaderboard-table th { background: var(--navy); color: var(--white); padding: 0.9rem 1rem; font-family: 'Syne', sans-serif; font-size: 0.85rem; text-align: left; }
+  .leaderboard-table td { padding: 0.8rem 1rem; font-size: 0.9rem; border-bottom: 1px solid var(--card); }
+  .leaderboard-table tr:last-child td { border-bottom: none; }
+  .leaderboard-table tr:nth-child(even) td { background: var(--card); }
+  .rank-1 { color: #F5A623; font-weight: 700; font-size: 1.1rem; }
+  .rank-2 { color: #78909C; font-weight: 600; }
+  .rank-3 { color: #8D6E63; font-weight: 600; }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: var(--white);
+    padding: 0.9rem 1.4rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.gold { background: var(--gold); color: var(--navy); font-weight: 600; }
+
+  @media (max-width: 600px) {
+    .dashboard { padding: 1rem; }
+    .options-grid { grid-template-columns: 1fr; }
+    .quiz-card-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">Quiz<span>Master</span> Pro</div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbarUser"></span>
+    <button class="btn-logout" id="btnLogout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- ══ PAGE: AUTH ══ -->
+<div class="page active" id="pageAuth">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <div class="auth-title">QuizMaster Pro</div>
+      <div class="auth-sub">Cloud-hosted quiz management platform</div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Login</div>
+        <div class="auth-tab" id="tabRegister" onclick="switchTab('register')">Register</div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="formLogin">
+        <div id="loginAlert" class="alert"></div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••"/>
+        </div>
+        <button class="btn-primary" id="btnLogin" onclick="doLogin()">Login</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="formRegister" style="display:none">
+        <div id="registerAlert" class="alert"></div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="regName" placeholder="Anuj Wagh"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="••••••••"/>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="regRole">
+            <option value="USER">User (take quizzes)</option>
+            <option value="ADMIN">Admin (manage quizzes)</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="btnRegister" onclick="doRegister()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: DASHBOARD ══ -->
+<div class="page" id="pageDashboard">
+  <div class="dashboard">
+    <div class="dash-header">
+      <div>
+        <div class="dash-greeting">Hello, <span id="dashName">User</span> 👋</div>
+      </div>
+      <span class="role-badge" id="dashRole">USER</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- Admin: Create Quiz button -->
+    <div class="section-header">
+      <div class="section-title">Available Quizzes</div>
+      <button class="btn-add" id="btnCreateQuiz" style="display:none" onclick="openCreateQuiz()">+ Create Quiz</button>
+    </div>
+
+    <!-- Quiz Grid -->
+    <div class="quiz-grid" id="quizGrid">
+      <div class="empty-state">
+        <div class="spinner" style="border-color:rgba(30,39,97,0.2);border-top-color:var(--navy);width:32px;height:32px;"></div>
+        <div class="empty-text" style="margin-top:1rem">Loading quizzes...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: ATTEMPT ══ -->
+<div class="page" id="pageAttempt">
+  <div class="dashboard">
+    <div class="dash-header">
+      <div>
+        <div class="dash-greeting" id="attemptTitle">Quiz</div>
+        <div style="font-size:0.88rem;color:var(--gray);margin-top:0.3rem" id="attemptSub"></div>
+      </div>
+      <button class="btn-add" onclick="showDashboard()">← Back</button>
+    </div>
+    <div class="attempt-wrap" id="attemptQuestions"></div>
+    <button class="btn-primary" style="max-width:300px;margin-top:1rem" id="btnSubmitAttempt" onclick="submitAttempt()">Submit Quiz</button>
+  </div>
+</div>
+
+<!-- ══ PAGE: RESULT ══ -->
+<div class="page" id="pageResult">
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="dash-greeting">Quiz Result 🎯</div>
+      <button class="btn-add" onclick="showDashboard()">← Back to Dashboard</button>
+    </div>
+    <div class="result-banner">
+      <div class="result-score" id="resultScore">0</div>
+      <div class="result-label" id="resultLabel">Score</div>
+    </div>
+    <div class="section-header" style="margin-top:1.5rem">
+      <div class="section-title">Leaderboard</div>
+    </div>
+    <table class="leaderboard-table" id="leaderboardTable">
+      <thead><tr><th>#</th><th>Name / Email</th><th>Score</th><th>Time</th></tr></thead>
+      <tbody id="leaderboardBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ MODAL: Create Quiz ══ -->
+<div class="modal-overlay" id="modalCreateQuiz">
+  <div class="modal">
+    <div class="modal-title">Create New Quiz</div>
+    <div id="createQuizAlert" class="alert"></div>
+    <div class="form-group">
+      <label>Quiz Title</label>
+      <input type="text" id="quizTitle" placeholder="e.g. Cloud Computing Basics"/>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <input type="text" id="quizDesc" placeholder="Brief description..."/>
+    </div>
+    <div class="form-group">
+      <label>Time Limit (minutes)</label>
+      <input type="number" id="quizTime" placeholder="30" min="1"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalCreateQuiz')">Cancel</button>
+      <button class="btn-submit" onclick="doCreateQuiz()">Create Quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Leaderboard ══ -->
+<div class="modal-overlay" id="modalLeaderboard">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title" id="lbModalTitle">Leaderboard</div>
+    <table class="leaderboard-table">
+      <thead><tr><th>#</th><th>Email</th><th>Score</th><th>Time (s)</th></tr></thead>
+      <tbody id="lbModalBody"></tbody>
+    </table>
+    <div class="modal-footer">
+      <button class="btn-submit" onclick="closeModal('modalLeaderboard')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+const API = "https://quizmaster-63u7.onrender.com";
+
+// ── STATE ───────────────────────────────────────────────────────
+let token = localStorage.getItem("qm_token") || null;
+let role  = localStorage.getItem("qm_role")  || null;
+let email = localStorage.getItem("qm_email") || null;
+let currentQuizId = null;
+let currentQuestions = [];
+let answers = {};
+
+// ── INIT ────────────────────────────────────────────────────────
+window.onload = () => {
+  if (token) showDashboard();
+};
+
+// ── UTILS ───────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>Please wait...' : btn.dataset.label || btn.textContent;
+  if (!loading && !btn.dataset.label) btn.dataset.label = btn.textContent;
+}
+
+function showAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'alert ' + type;
+}
+
+function clearAlert(id) {
+  const el = document.getElementById(id);
+  el.className = 'alert';
+  el.textContent = '';
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function apiFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body)  opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  return { ok: res.ok, status: res.status, data };
+}
+
+// ── AUTH ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('formLogin').style.display    = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('formRegister').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  clearAlert('loginAlert');
+  const em = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  if (!em || !pw) return showAlert('loginAlert', 'Please fill all fields');
+
+  setLoading('btnLogin', true);
+  try {
+    const r = await apiFetch('/api/auth/login', 'POST', { email: em, password: pw });
+    if (r.ok && r.data.token) {
+      token = r.data.token;
+      role  = r.data.role;
+      email = r.data.email || em;
+      localStorage.setItem('qm_token', token);
+      localStorage.setItem('qm_role',  role);
+      localStorage.setItem('qm_email', email);
+      showToast('Login successful! 🎉', 'gold');
+      showDashboard();
+    } else {
+      showAlert('loginAlert', r.data?.message || r.data || 'Invalid credentials');
+    }
+  } catch (e) {
+    showAlert('loginAlert', 'Cannot connect to server. Check if backend is running.');
+  }
+  setLoading('btnLogin', false);
+}
+
+async function doRegister() {
+  clearAlert('registerAlert');
+  const name = document.getElementById('regName').value.trim();
+  const em   = document.getElementById('regEmail').value.trim();
+  const pw   = document.getElementById('regPassword').value;
+  const rl   = document.getElementById('regRole').value;
+  if (!name || !em || !pw) return showAlert('registerAlert', 'Please fill all fields');
+
+  setLoading('btnRegister', true);
+  try {
+    const r = await apiFetch('/api/auth/register', 'POST', { name, email: em, password: pw, role: rl });
+    if (r.ok) {
+      showAlert('registerAlert', 'Account created! Please login.', 'success');
+      setTimeout(() => switchTab('login'), 1500);
+    } else {
+      showAlert('registerAlert', r.data?.message || r.data || 'Registration failed');
+    }
+  } catch (e) {
+    showAlert('registerAlert', 'Cannot connect to server.');
+  }
+  setLoading('btnRegister', false);
+}
+
+function logout() {
+  token = role = email = null;
+  localStorage.removeItem('qm_token');
+  localStorage.removeItem('qm_role');
+  localStorage.removeItem('qm_email');
+  document.getElementById('topbarUser').style.display = 'none';
+  document.getElementById('btnLogout').style.display  = 'none';
+  showPage('pageAuth');
+  showToast('Logged out successfully');
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────
+async function showDashboard() {
+  showPage('pageDashboard');
+
+  // topbar
+  document.getElementById('topbarUser').textContent = email;
+  document.getElementById('topbarUser').style.display = 'inline';
+  document.getElementById('btnLogout').style.display  = 'inline-block';
+
+  // greeting
+  const name = email ? email.split('@')[0] : 'User';
+  document.getElementById('dashName').textContent = name;
+  document.getElementById('dashRole').textContent = role || 'USER';
+
+  // show create button for admin
+  document.getElementById('btnCreateQuiz').style.display = role === 'ADMIN' ? 'inline-block' : 'none';
+
+  loadQuizzes();
+}
+
+async function loadQuizzes() {
+  const grid = document.getElementById('quizGrid');
+  grid.innerHTML = `<div class="empty-state"><div class="spinner" style="border-color:rgba(30,39,97,0.2);border-top-color:var(--navy);width:32px;height:32px;"></div><div class="empty-text" style="margin-top:1rem">Loading quizzes...</div></div>`;
+
+  try {
+    const r = await apiFetch('/api/quiz/all');
+    if (r.ok) {
+      const quizzes = Array.isArray(r.data) ? r.data : [];
+
+      // stats
+      document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-num">${quizzes.length}</div><div class="stat-label">Total Quizzes</div></div>
+        <div class="stat-card gold"><div class="stat-num">${role}</div><div class="stat-label">Your Role</div></div>
+        <div class="stat-card green"><div class="stat-num">✓</div><div class="stat-label">Connected to Cloud</div></div>
+      `;
+
+      if (quizzes.length === 0) {
+        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No quizzes yet</div><div class="empty-sub">${role === 'ADMIN' ? 'Create your first quiz using the button above' : 'No quizzes available yet'}</div></div>`;
+        return;
+      }
+
+      grid.innerHTML = quizzes.map(q => `
+        <div class="quiz-card">
+          <div class="quiz-card-header">
+            <div class="quiz-card-title">${q.title || 'Untitled Quiz'}</div>
+          </div>
+          <div class="quiz-card-body">
+            <div class="quiz-card-desc">${q.description || 'No description provided'}</div>
+            <div class="quiz-card-meta">
+              ${q.timeLimit ? `<span class="meta-tag">⏱ ${q.timeLimit} mins</span>` : ''}
+              <span class="meta-tag">ID: ${q.id}</span>
+            </div>
+            <div class="quiz-card-actions">
+              ${role === 'USER' ? `<button class="btn-sm btn-attempt" onclick="startAttempt(${q.id}, '${q.title}')">Attempt Quiz</button>` : ''}
+              <button class="btn-sm btn-leaderboard" onclick="viewLeaderboard(${q.id}, '${q.title}')">🏆 Leaderboard</button>
+              ${role === 'ADMIN' ? `<button class="btn-sm btn-delete" onclick="deleteQuiz(${q.id})">🗑 Delete</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else if (r.status === 401 || r.status === 403) {
+      logout();
+      showToast('Session expired. Please login again.');
+    } else {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load quizzes</div><div class="empty-sub">${r.data?.message || 'Server error'}</div></div>`;
+    }
+  } catch (e) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Cannot connect to server</div><div class="empty-sub">The backend may be sleeping (free Render tier). Wait 30 seconds and try again.</div></div>`;
+  }
+}
+
+// ── QUIZ CREATION ───────────────────────────────────────────────
+function openCreateQuiz() {
+  clearAlert('createQuizAlert');
+  document.getElementById('quizTitle').value = '';
+  document.getElementById('quizDesc').value  = '';
+  document.getElementById('quizTime').value  = '';
+  openModal('modalCreateQuiz');
+}
+
+async function doCreateQuiz() {
+  clearAlert('createQuizAlert');
+  const title = document.getElementById('quizTitle').value.trim();
+  const desc  = document.getElementById('quizDesc').value.trim();
+  const time  = document.getElementById('quizTime').value;
+  if (!title) return showAlert('createQuizAlert', 'Title is required');
+
+  try {
+    const r = await apiFetch('/api/quiz/create', 'POST', { title, description: desc, timeLimit: time ? parseInt(time) : null });
+    if (r.ok) {
+      closeModal('modalCreateQuiz');
+      showToast('Quiz created! ✅', 'gold');
+      loadQuizzes();
+    } else {
+      showAlert('createQuizAlert', r.data?.message || r.data || 'Failed to create quiz');
+    }
+  } catch (e) {
+    showAlert('createQuizAlert', 'Cannot connect to server.');
+  }
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Delete this quiz? This cannot be undone.')) return;
+  try {
+    const r = await apiFetch('/api/quiz/' + id, 'DELETE');
+    if (r.ok) { showToast('Quiz deleted', ''); loadQuizzes(); }
+    else showToast('Failed to delete quiz', '');
+  } catch (e) { showToast('Cannot connect to server', ''); }
+}
+
+// ── QUIZ ATTEMPT ────────────────────────────────────────────────
+async function startAttempt(quizId, quizTitle) {
+  currentQuizId = quizId;
+  answers = {};
+  showPage('pageAttempt');
+  document.getElementById('attemptTitle').textContent = quizTitle;
+  document.getElementById('attemptSub').textContent   = 'Select one answer per question then submit';
+  document.getElementById('attemptQuestions').innerHTML = `<div class="empty-state"><div class="spinner" style="border-color:rgba(30,39,97,0.2);border-top-color:var(--navy);width:32px;height:32px;"></div></div>`;
+
+  try {
+    const r = await apiFetch('/api/question/quiz/' + quizId);
+    if (r.ok) {
+      currentQuestions = Array.isArray(r.data) ? r.data : [];
+      if (currentQuestions.length === 0) {
+        document.getElementById('attemptQuestions').innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions yet</div><div class="empty-sub">Admin hasn't added questions to this quiz</div></div>`;
+        return;
+      }
+      renderQuestions();
+    } else {
+      document.getElementById('attemptQuestions').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load questions</div></div>`;
+    }
+  } catch (e) {
+    document.getElementById('attemptQuestions').innerHTML = `<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Cannot connect to server</div></div>`;
+  }
+}
+
+function renderQuestions() {
+  const wrap = document.getElementById('attemptQuestions');
+  wrap.innerHTML = currentQuestions.map((q, i) => `
+    <div class="question-block">
+      <div class="question-num">Question ${i + 1} of ${currentQuestions.length}</div>
+      <div class="question-text">${q.questionText || q.text || q.question}</div>
+      <div class="options-grid">
+        ${['A','B','C','D'].map(opt => {
+          const val = q['option' + opt] || q['option' + opt.toLowerCase()];
+          return val ? `<button class="option-btn" id="opt_${q.id}_${opt}" onclick="selectOption(${q.id}, '${opt}', this)">${opt}. ${val}</button>` : '';
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectOption(questionId, option, btn) {
+  answers[questionId] = option;
+  // clear siblings
+  ['A','B','C','D'].forEach(o => {
+    const el = document.getElementById('opt_' + questionId + '_' + o);
+    if (el) el.classList.remove('selected');
+  });
+  btn.classList.add('selected');
+}
+
+async function submitAttempt() {
+  if (Object.keys(answers).length < currentQuestions.length) {
+    showToast('Please answer all questions before submitting!');
+    return;
+  }
+
+  const submissionAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
+    questionId: parseInt(questionId),
+    selectedOption
+  }));
+
+  setLoading('btnSubmitAttempt', true);
+  try {
+    const r = await apiFetch('/api/attempt/submit', 'POST', { quizId: currentQuizId, answers: submissionAnswers });
+    if (r.ok) {
+      const score = r.data.score ?? r.data.totalScore ?? r.data;
+      showResult(score, currentQuizId);
+    } else {
+      showToast('Submission failed: ' + (r.data?.message || r.data || 'Error'));
+    }
+  } catch (e) {
+    showToast('Cannot connect to server');
+  }
+  setLoading('btnSubmitAttempt', false);
+}
+
+async function showResult(score, quizId) {
+  showPage('pageResult');
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultLabel').textContent = `out of ${currentQuestions.length} correct`;
+
+  // load leaderboard
+  try {
+    const r = await apiFetch('/api/leaderboard/' + quizId);
+    if (r.ok) {
+      const lb = Array.isArray(r.data) ? r.data : [];
+      renderLeaderboard('leaderboardBody', lb);
+    }
+  } catch (e) {}
+}
+
+function renderLeaderboard(bodyId, data) {
+  const body = document.getElementById(bodyId);
+  if (!data || data.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--lgray);padding:1.5rem">No entries yet</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map((entry, i) => `
+    <tr>
+      <td class="${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+      <td>${entry.email || entry.userName || entry.name || 'User'}</td>
+      <td><strong>${entry.score}</strong></td>
+      <td>${entry.timeTaken || entry.time || '-'}s</td>
+    </tr>
+  `).join('');
+}
+
+async function viewLeaderboard(quizId, quizTitle) {
+  document.getElementById('lbModalTitle').textContent = '🏆 ' + quizTitle;
+  document.getElementById('lbModalBody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem"><div class="spinner" style="border-color:rgba(30,39,97,0.2);border-top-color:var(--navy)"></div></td></tr>';
+  openModal('modalLeaderboard');
+
+  try {
+    const r = await apiFetch('/api/leaderboard/' + quizId);
+    if (r.ok) renderLeaderboard('lbModalBody', Array.isArray(r.data) ? r.data : []);
+    else document.getElementById('lbModalBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--lgray)">Failed to load</td></tr>';
+  } catch (e) {
+    document.getElementById('lbModalBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--lgray)">Cannot connect</td></tr>';
+  }
+}
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// Enter key on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('formLogin').style.display !== 'none') doLogin();
+  }
+});
+</script>
+</body>
+</html>
