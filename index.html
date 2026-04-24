@@ -811,13 +811,30 @@ function openCreateQuiz() {
 
 async function doCreateQuiz() {
   clearAlert('createQuizAlert');
+
   const title = document.getElementById('quizTitle').value.trim();
   const desc  = document.getElementById('quizDesc').value.trim();
   const time  = document.getElementById('quizTime').value;
-  if (!title) return showAlert('createQuizAlert', 'Title is required');
+
+  if (!title) {
+    return showAlert('createQuizAlert', 'Title is required');
+  }
+
+  if (!desc) {
+    return showAlert('createQuizAlert', 'Topic is required');
+  }
+
+  if (!time) {
+    return showAlert('createQuizAlert', 'Duration is required');
+  }
 
   try {
-    const r = await apiFetch('/api/quiz/create', 'POST', { title, description: desc, timeLimit: time ? parseInt(time) : null });
+    const r = await apiFetch('/api/quiz/create', 'POST', {
+      title: title,
+      topic: desc,                      // ✅ FIXED (was description)
+      duration: parseInt(time)          // ✅ FIXED (was timeLimit)
+    });
+
     if (r.ok) {
       closeModal('modalCreateQuiz');
       showToast('Quiz created! ✅', 'gold');
@@ -829,7 +846,6 @@ async function doCreateQuiz() {
     showAlert('createQuizAlert', 'Cannot connect to server.');
   }
 }
-
 async function deleteQuiz(id) {
   if (!confirm('Delete this quiz? This cannot be undone.')) return;
   try {
